@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto"
 	"io"
+	"io/ioutil"
 
 	"github.com/pkg/errors"
 
@@ -91,20 +92,13 @@ func (a *SignerVerifier) Sign(ctx context.Context, payload []byte) ([]byte, []by
 // All other options are ignored if specified.
 func (a *SignerVerifier) SignMessage(message io.Reader, opts ...signature.SignOption) ([]byte, error) {
 	ctx := context.Background()
-	var digest []byte
-	var signerOpts crypto.SignerOpts = a.hashFunc
 
-	for _, opt := range opts {
-		opt.ApplyDigest(&digest)
-		opt.ApplyCryptoSignerOpts(&signerOpts)
-	}
-
-	digest, _, err := signature.ComputeDigestForSigning(message, signerOpts.HashFunc(), azureSupportedHashFuncs, opts...)
+	msg, err := ioutil.ReadAll(message)
 	if err != nil {
 		return nil, err
 	}
 
-	return a.client.sign(ctx, digest)
+	return a.client.sign(ctx, msg)
 }
 
 // VerifySignature verifies the signature for the given message. Unless provided
